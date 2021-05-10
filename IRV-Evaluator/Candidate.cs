@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace IRV_Evaluator
@@ -8,6 +9,7 @@ namespace IRV_Evaluator
         public string Name { get; set; }
         public int Index { get; set; }
         public List<int> Votes { get; set; }
+        public List<int> ReceivedRedestributedVoteIndizes { get; private set; } = new List<int>();
         public int EliminatedInRound { get; set; }
         public bool IsEliminated { get; set; }
         public int VoteCount { get; set; } = 0;
@@ -54,6 +56,16 @@ namespace IRV_Evaluator
                 list.Add(Votes[index]);
             }
             return list;
+        }
+
+        public void ReceiveVoteRedestribution(int index, int redestributedRank)
+        {
+            if (!IsEliminated && Votes[index] == redestributedRank)
+            {
+                Console.WriteLine($"{Name} received a #{redestributedRank} vote.");
+                ReceivedRedestributedVoteIndizes.Add(index);
+                VoteCount++;
+            }
         }
     }
 }

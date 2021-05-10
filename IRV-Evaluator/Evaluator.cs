@@ -8,7 +8,7 @@ namespace IRV_Evaluator
 {
     public static class Evaluator
     {
-        public static double _threshold = 66.67;
+        public static double _threshold = 50;
 
         public static Result Evaluate(Office office)
         {
@@ -30,7 +30,6 @@ namespace IRV_Evaluator
                 candidate.EliminatedInRound = roundCounter;
                 RedistributeVotes(candidate, roundCounter);
                 round = EvaluateRound(office.Candidates, out majorityFound);
-                //majorityFound = office.Candidates.Max(c => c.Percentage) > 66.6;
                 result.Rounds.Add(round);
                 round.Print($"{office.Name} - Round {result.Rounds.Count}");
                 roundCounter++;
@@ -52,33 +51,38 @@ namespace IRV_Evaluator
 
         private static void RedistributeVotes(Candidate eliminated, int rank)
         {
-            if (rank > 1)
-            {
-                RedistributeVotes(eliminated, rank - 1);
-            }
+            Console.WriteLine("---");
+            Console.WriteLine($"Redestributing {eliminated.Name} #1 votes");
+            Console.WriteLine("---");
             var office = eliminated.Office;
-            if (rank < office.Candidates.Count)
+            var voteIndizes = eliminated.GetIndizesOfAllVotesWithRanking(1);
+
+            foreach (var index in voteIndizes)
             {
-                var voteIndizes = eliminated.GetIndizesOfAllVotesWithRanking(rank);
-                var redistributed = office.Candidates.Select(c => c.GetVotesByIndizes(voteIndizes).Count(v => v == rank + 1)).ToList();
-                for (int i = 0; i < office.Candidates.Count; i++)
+                Redestribute(office, index, 2);
+            }
+
+            if (eliminated.ReceivedRedestributedVoteIndizes.Count() > 0)
+            {
+                Console.WriteLine($"{Environment.NewLine}Redestributing {eliminated.Name} received redestribution votes");
+                foreach (var index in eliminated.ReceivedRedestributedVoteIndizes)
                 {
-                    if (redistributed[i] == 0)
-                    {
-                        continue;
-                    }
-                    var candiate = office.Candidates[i];
-                    if (!candiate.IsEliminated)
-                    {
-                        candiate.VoteCount += redistributed[i];
-                    }
+                    var indexValue = eliminated.Votes[index];
+                    var redistributionRank = indexValue + 1;
+                    Redestribute(office, index, redistributionRank);
                 }
-                office.RecalculatePercentage();
             }
-            else
+            office.RecalculatePercentage();
+        }
+
+        private static void Redestribute(Office office, int index, int redistributionRank)
+        {
+            var target = office.Candidates.First(c => c.Votes[index] == redistributionRank);
+            if (target.IsEliminated)
             {
-                throw new InvalidOperationException($"Unable to redistribute vote on last rank. Candidate: {eliminated.Name} Rank: {rank}");
+                Redestribute(office, index, redistributionRank + 1);
             }
+            target.ReceiveVoteRedestribution(index, redistributionRank);
         }
 
         private static Candidate EliminateCandidate(List<Candidate> candidates)
@@ -93,7 +97,7 @@ namespace IRV_Evaluator
         {
             var notEliminated = candidates.Where(c => !c.IsEliminated);
             var min = notEliminated.Min(c => c.VoteCount);
-            var toEliminate = candidates.Where(c => c.VoteCount == min);
+            var toEliminate = notEliminated.Where(c => c.VoteCount == min);
             if (start == 1)
             {
                 foreach (var eliminate in toEliminate)
