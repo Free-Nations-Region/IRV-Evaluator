@@ -12,7 +12,10 @@ namespace IRV_Evaluator
 
         public static Result Evaluate(Office office)
         {
-            var result = new Result();
+            var result = new Result
+            {
+                Office = office
+            };
             office.LoadCandidates();
             office.Candidates.ForEach(c =>
             {

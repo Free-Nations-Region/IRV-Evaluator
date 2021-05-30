@@ -8,6 +8,7 @@ namespace IRV_Evaluator
     {
         public string Name { get; set; }
         public int Index { get; set; }
+        public string HexColor { get; set; }
         public List<int> Votes { get; set; }
         public List<int> ReceivedRedestributedVoteIndizes { get; private set; } = new List<int>();
         public int EliminatedInRound { get; set; }
